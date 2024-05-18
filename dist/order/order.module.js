@@ -13,6 +13,8 @@ const order_service_1 = require("./order.service");
 const bull_1 = require("@nestjs/bull");
 const nestjs_1 = require("@bull-board/nestjs");
 const bullMQAdapter_1 = require("@bull-board/api/bullMQAdapter");
+const order_consumer_1 = require("./order.consumer");
+const payment_module_1 = require("../payment/payment.module");
 let OrderModule = class OrderModule {
 };
 exports.OrderModule = OrderModule;
@@ -24,11 +26,13 @@ exports.OrderModule = OrderModule = __decorate([
                 name: 'order',
                 adapter: bullMQAdapter_1.BullMQAdapter,
             }),
+            payment_module_1.PaymentModule
         ],
         controllers: [order_controller_1.OrderController],
         providers: [
+            common_1.Logger,
             order_service_1.OrderService,
-            common_1.Logger
+            order_consumer_1.OrderConsumer
         ]
     })
 ], OrderModule);

@@ -4,6 +4,8 @@ import { OrderService } from './order.service';
 import { BullModule } from '@nestjs/bull';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
+import { OrderConsumer } from './order.consumer';
+import { PaymentModule } from 'src/payment/payment.module';
 
 @Module({
   imports: [
@@ -14,11 +16,13 @@ import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
       name: 'order',
       adapter: BullMQAdapter, //or use BullAdapter if you're using bull instead of bullMQ
     }),
+    PaymentModule
   ],
   controllers: [OrderController],
   providers: [
+    Logger,
     OrderService,
-    Logger
+    OrderConsumer
   ]
 })
 export class OrderModule { }

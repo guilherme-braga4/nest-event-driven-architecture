@@ -6,20 +6,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BullConfigService = void 0;
+exports.PaymentModule = void 0;
 const common_1 = require("@nestjs/common");
-const sua_fila_1 = require("../sua-fila");
-let BullConfigService = class BullConfigService {
-    createQueuesOptions() {
-        return [
-            new BullAdapter(sua_fila_1.SomeQueue),
-            new BullAdapter(sua_fila_1.SomeOtherQueue),
-            new BullMQAdapter(sua_fila_1.QueueMQ)
-        ];
-    }
+const payment_service_1 = require("./payment.service");
+const payment_controller_1 = require("./payment.controller");
+let PaymentModule = class PaymentModule {
 };
-exports.BullConfigService = BullConfigService;
-exports.BullConfigService = BullConfigService = __decorate([
-    (0, common_1.Injectable)()
-], BullConfigService);
-//# sourceMappingURL=bull.config.js.map
+exports.PaymentModule = PaymentModule;
+exports.PaymentModule = PaymentModule = __decorate([
+    (0, common_1.Module)({
+        providers: [payment_service_1.PaymentService],
+        controllers: [payment_controller_1.PaymentController],
+        exports: [payment_service_1.PaymentService]
+    })
+], PaymentModule);
+//# sourceMappingURL=payment.module.js.map

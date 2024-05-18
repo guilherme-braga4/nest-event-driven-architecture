@@ -14,6 +14,7 @@ const bull_1 = require("@nestjs/bull");
 const order_module_1 = require("./order/order.module");
 const nestjs_1 = require("@bull-board/nestjs");
 const express_1 = require("@bull-board/express");
+const payment_module_1 = require("./payment/payment.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -30,7 +31,8 @@ exports.AppModule = AppModule = __decorate([
                 route: '/queues',
                 adapter: express_1.ExpressAdapter
             }),
-            order_module_1.OrderModule
+            order_module_1.OrderModule,
+            payment_module_1.PaymentModule
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
