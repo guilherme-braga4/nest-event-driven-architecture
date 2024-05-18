@@ -6,34 +6,30 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AppModule = void 0;
+exports.OrderModule = void 0;
 const common_1 = require("@nestjs/common");
-const app_controller_1 = require("./app.controller");
-const app_service_1 = require("./app.service");
+const order_controller_1 = require("./order.controller");
+const order_service_1 = require("./order.service");
 const bull_1 = require("@nestjs/bull");
-const order_module_1 = require("./order/order.module");
 const nestjs_1 = require("@bull-board/nestjs");
-const express_1 = require("@bull-board/express");
-let AppModule = class AppModule {
+const bullMQAdapter_1 = require("@bull-board/api/bullMQAdapter");
+let OrderModule = class OrderModule {
 };
-exports.AppModule = AppModule;
-exports.AppModule = AppModule = __decorate([
+exports.OrderModule = OrderModule;
+exports.OrderModule = OrderModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            bull_1.BullModule.forRoot({
-                redis: {
-                    host: 'localhost',
-                    port: 6379,
-                },
+            bull_1.BullModule.registerQueue({ name: 'order' }),
+            nestjs_1.BullBoardModule.forFeature({
+                name: 'order',
+                adapter: bullMQAdapter_1.BullMQAdapter,
             }),
-            nestjs_1.BullBoardModule.forRoot({
-                route: '/queues',
-                adapter: express_1.ExpressAdapter
-            }),
-            order_module_1.OrderModule
         ],
-        controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        controllers: [order_controller_1.OrderController],
+        providers: [
+            order_service_1.OrderService,
+            common_1.Logger
+        ]
     })
-], AppModule);
-//# sourceMappingURL=app.module.js.map
+], OrderModule);
+//# sourceMappingURL=order.module.js.map
