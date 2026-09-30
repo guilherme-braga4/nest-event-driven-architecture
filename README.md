@@ -1,73 +1,81 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# NestJS Event-Driven Architecture
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Proof of concept of asynchronous, queue-based processing with **NestJS**, **Bull** and **Redis**. An HTTP endpoint publishes an order to a queue and answers as soon as the job is queued. A consumer processes the order in the background and calls the payment step.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## How it works
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Installation
-
-```bash
-$ yarn install
+```
+POST /order -> OrderService (producer) -> Redis queue "order" -> OrderConsumer (worker) -> PaymentService
 ```
 
-## Running the app
+1. `OrderController` receives the order and hands it to `OrderService`.
+2. `OrderService` adds the payload as a job to the `order` queue.
+3. `OrderConsumer` picks the job from the queue and calls `PaymentService`.
+4. `PaymentService` checks the order status. When it is `Pending`, it simulates the customer notification with a log.
+
+The HTTP request does not wait for the processing. Producer and consumer only share the queue.
+
+## Stack
+
+- NestJS 10 and TypeScript
+- `@nestjs/bull` with Bull 4
+- Redis
+- Bull Board 5 (queue dashboard)
+
+## Running
+
+Requirements: Node.js 18 or later, Yarn and a Redis instance on `localhost:6379`.
+
+Start Redis with Docker:
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+docker run -d --name redis -p 6379:6379 redis
 ```
 
-## Test
+Install and start the API:
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+git clone https://github.com/guilherme-braga4/nest-event-driven-architecture.git
+cd nest-event-driven-architecture
+yarn install
+yarn start:dev
 ```
 
-## Support
+Publish an order:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+curl -X POST http://localhost:3000/order \
+  -H "Content-Type: application/json" \
+  -d '{"orderId": 1, "product": "Alexa", "status": "Pending"}'
+```
 
-## Stay in touch
+Each step writes to the console: the job added to the queue, the job received by the consumer and the notification message of the payment step. Sample requests are in `requests.http`.
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Endpoints
 
-## License
+| Method | Route | Description |
+|---|---|---|
+| `POST` | `/order` | Publishes the request body as a job in the `order` queue |
+| `GET` | `/queues` | Bull Board dashboard |
+| `GET` | `/` | Default route (`Hello World!`) |
 
-Nest is [MIT licensed](LICENSE).
+## Project structure
+
+```
+src/
+  app.module.ts          Redis connection and Bull Board setup
+  order/
+    order.controller.ts  POST /order
+    order.service.ts     Producer: adds jobs to the queue
+    order.consumer.ts    Consumer: processes jobs from the queue
+  payment/
+    payment.service.ts   Payment step called by the consumer
+```
+
+## Next steps
+
+- Read the Redis host and port from environment variables (today they are fixed in `app.module.ts`).
+- Validate the order payload with a DTO.
+- Register the queue in Bull Board with `BullAdapter`, the adapter made for Bull.
+- Replace the placeholder volume paths in `docker-compose.yml`.
+- Add retries, a dead-letter strategy and automated tests.
